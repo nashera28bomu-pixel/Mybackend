@@ -19,7 +19,7 @@ YTS_PROVIDERS = [
 "https://yts.lt/api/v2",
 ]
 
-Multiple TV providers
+#Multiple TV providers
 
 EZTV_PROVIDERS = [
 "https://eztvx.to/api/get-torrents",
@@ -71,7 +71,7 @@ return response.json()
 
 ==========================================================
 
-MOVIES
+#MOVIES
 
 ==========================================================
 
@@ -192,7 +192,7 @@ return result
 
 ==========================================================
 
-TV EPISODES
+#TV EPISODES
 
 ==========================================================
 
