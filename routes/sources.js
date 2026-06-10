@@ -1,117 +1,88 @@
 // ─── routes/sources.js ────────────────────────────────────────────────────────
-// Returns array of embed URLs — frontend tries each in order
-// All providers are free, no ads on the embed player itself
+// Primary: ezvidapi.com — sandbox-friendly, no ads, no redirects, free, no key
+// Fallback: multiembed (SuperEmbed) — TMDB native, no sandbox issues
 import express from 'express';
-import { tmdb } from './tmdb.js';
 
 const router = express.Router();
 
-// ─── Build embed URLs from IMDB/TMDB ID ──────────────────────────────────────
-function movieEmbeds(imdbId, tmdbId) {
+// ─── Build embed URLs — TMDB ID only, no IMDB needed ─────────────────────────
+function movieEmbeds(tmdbId) {
   return [
     {
-      provider: 'VidSrc Pro',
-      url: `https://vidsrc.pro/embed/movie/${imdbId}`,
+      provider: 'EzVid (Auto)',
+      url: `https://ezvidapi.com/embed/movie/${tmdbId}`,
       type: 'iframe',
     },
     {
-      provider: 'VidSrc',
-      url: `https://vidsrc.me/embed/movie?imdb=${imdbId}`,
+      provider: 'EzVid (VidSrc)',
+      url: `https://ezvidapi.com/embed/movie/${tmdbId}?provider=vidsrc`,
       type: 'iframe',
     },
     {
-      provider: '2Embed',
-      url: `https://www.2embed.cc/embed/${imdbId}`,
+      provider: 'EzVid (Stremio)',
+      url: `https://ezvidapi.com/embed/movie/${tmdbId}?provider=stremio`,
       type: 'iframe',
     },
     {
-      provider: 'EmbedSu',
-      url: `https://embed.su/embed/movie/${tmdbId}`,
+      provider: 'SuperEmbed',
+      url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`,
       type: 'iframe',
     },
   ];
 }
 
-function episodeEmbeds(imdbId, tmdbId, season, episode) {
+function episodeEmbeds(tmdbId, season, episode) {
   return [
     {
-      provider: 'VidSrc Pro',
-      url: `https://vidsrc.pro/embed/tv/${imdbId}/${season}/${episode}`,
+      provider: 'EzVid (Auto)',
+      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}`,
       type: 'iframe',
     },
     {
-      provider: 'VidSrc',
-      url: `https://vidsrc.me/embed/tv?imdb=${imdbId}&season=${season}&episode=${episode}`,
+      provider: 'EzVid (VidSrc)',
+      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}?provider=vidsrc`,
       type: 'iframe',
     },
     {
-      provider: '2Embed',
-      url: `https://www.2embed.cc/embedtv/${imdbId}&s=${season}&e=${episode}`,
+      provider: 'EzVid (Stremio)',
+      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}?provider=stremio`,
       type: 'iframe',
     },
     {
-      provider: 'EmbedSu',
-      url: `https://embed.su/embed/tv/${tmdbId}/${season}/${episode}`,
+      provider: 'SuperEmbed',
+      url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}`,
       type: 'iframe',
     },
   ];
 }
 
 // ─── GET /api/sources/movie/:tmdbId ──────────────────────────────────────────
-router.get('/movie/:tmdbId', async (req, res) => {
+router.get('/movie/:tmdbId', (req, res) => {
   const { tmdbId } = req.params;
   if (isNaN(tmdbId)) return res.status(400).json({ error: 'Invalid TMDB ID' });
 
-  try {
-    // Get IMDB ID from TMDB
-    const extIds = await tmdb(`/movie/${tmdbId}/external_ids`);
-    const imdbId = extIds.imdb_id;
-
-    if (!imdbId) {
-      return res.status(404).json({ success: false, error: 'No IMDB ID found for this movie' });
-    }
-
-    res.json({
-      success: true,
-      tmdb_id: Number(tmdbId),
-      imdb_id: imdbId,
-      type: 'movie',
-      sources: movieEmbeds(imdbId, tmdbId),
-    });
-  } catch (e) {
-    console.error('[Movie Sources]', e.message);
-    res.status(500).json({ success: false, error: e.message });
-  }
+  res.json({
+    success: true,
+    tmdb_id: Number(tmdbId),
+    type: 'movie',
+    sources: movieEmbeds(tmdbId),
+  });
 });
 
 // ─── GET /api/sources/episode/:tmdbId?season=1&episode=1 ─────────────────────
-router.get('/episode/:tmdbId', async (req, res) => {
+router.get('/episode/:tmdbId', (req, res) => {
   const { tmdbId } = req.params;
   const { season = '1', episode = '1' } = req.query;
-
   if (isNaN(tmdbId)) return res.status(400).json({ error: 'Invalid TMDB ID' });
 
-  try {
-    const extIds = await tmdb(`/tv/${tmdbId}/external_ids`);
-    const imdbId = extIds.imdb_id;
-
-    if (!imdbId) {
-      return res.status(404).json({ success: false, error: 'No IMDB ID found for this series' });
-    }
-
-    res.json({
-      success: true,
-      tmdb_id: Number(tmdbId),
-      imdb_id: imdbId,
-      type: 'episode',
-      season: Number(season),
-      episode: Number(episode),
-      sources: episodeEmbeds(imdbId, tmdbId, season, episode),
-    });
-  } catch (e) {
-    console.error('[Episode Sources]', e.message);
-    res.status(500).json({ success: false, error: e.message });
-  }
+  res.json({
+    success: true,
+    tmdb_id: Number(tmdbId),
+    type: 'episode',
+    season: Number(season),
+    episode: Number(episode),
+    sources: episodeEmbeds(tmdbId, season, episode),
+  });
 });
 
 export default router;
