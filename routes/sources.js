@@ -1,26 +1,30 @@
 // ─── routes/sources.js ────────────────────────────────────────────────────────
-// Primary: ezvidapi.com — sandbox-friendly, no ads, no redirects, free, no key
-// Fallback: multiembed (SuperEmbed) — TMDB native, no sandbox issues
+// 5-provider chain — most reliable first
+// No sandbox needed, no heavy redirects, TMDB IDs work on all
 import express from 'express';
 
 const router = express.Router();
 
-// ─── Build embed URLs — TMDB ID only, no IMDB needed ─────────────────────────
 function movieEmbeds(tmdbId) {
   return [
     {
-      provider: 'EzVid (Auto)',
-      url: `https://ezvidapi.com/embed/movie/${tmdbId}`,
+      provider: 'VidBinge',
+      url: `https://vidbinge.to/movie/${tmdbId}`,
       type: 'iframe',
     },
     {
-      provider: 'EzVid (VidSrc)',
-      url: `https://ezvidapi.com/embed/movie/${tmdbId}?provider=vidsrc`,
+      provider: 'VidSrc ICU',
+      url: `https://vidsrc.icu/embed/movie/${tmdbId}`,
       type: 'iframe',
     },
     {
-      provider: 'EzVid (Stremio)',
-      url: `https://ezvidapi.com/embed/movie/${tmdbId}?provider=stremio`,
+      provider: 'VidSrc Pro',
+      url: `https://vidsrc.pro/embed/movie/${tmdbId}`,
+      type: 'iframe',
+    },
+    {
+      provider: 'AutoEmbed',
+      url: `https://autoembed.co/movie/tmdb/${tmdbId}`,
       type: 'iframe',
     },
     {
@@ -34,18 +38,23 @@ function movieEmbeds(tmdbId) {
 function episodeEmbeds(tmdbId, season, episode) {
   return [
     {
-      provider: 'EzVid (Auto)',
-      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}`,
+      provider: 'VidBinge',
+      url: `https://vidbinge.to/tv/${tmdbId}/${season}/${episode}`,
       type: 'iframe',
     },
     {
-      provider: 'EzVid (VidSrc)',
-      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}?provider=vidsrc`,
+      provider: 'VidSrc ICU',
+      url: `https://vidsrc.icu/embed/tv/${tmdbId}/${season}/${episode}`,
       type: 'iframe',
     },
     {
-      provider: 'EzVid (Stremio)',
-      url: `https://ezvidapi.com/embed/tv/${tmdbId}/${season}/${episode}?provider=stremio`,
+      provider: 'VidSrc Pro',
+      url: `https://vidsrc.pro/embed/tv/${tmdbId}/${season}/${episode}`,
+      type: 'iframe',
+    },
+    {
+      provider: 'AutoEmbed',
+      url: `https://autoembed.co/tv/tmdb/${tmdbId}-${season}-${episode}`,
       type: 'iframe',
     },
     {
@@ -60,7 +69,6 @@ function episodeEmbeds(tmdbId, season, episode) {
 router.get('/movie/:tmdbId', (req, res) => {
   const { tmdbId } = req.params;
   if (isNaN(tmdbId)) return res.status(400).json({ error: 'Invalid TMDB ID' });
-
   res.json({
     success: true,
     tmdb_id: Number(tmdbId),
@@ -74,7 +82,6 @@ router.get('/episode/:tmdbId', (req, res) => {
   const { tmdbId } = req.params;
   const { season = '1', episode = '1' } = req.query;
   if (isNaN(tmdbId)) return res.status(400).json({ error: 'Invalid TMDB ID' });
-
   res.json({
     success: true,
     tmdb_id: Number(tmdbId),
